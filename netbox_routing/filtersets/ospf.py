@@ -22,7 +22,7 @@ __all__ = (
 
 class OSPFInstanceFilterSet(NetBoxModelFilterSet):
     device_id = django_filters.ModelMultipleChoiceFilter(
-        field_name='device',
+        field_name='device_id',
         queryset=Device.objects.all(),
         label='Device (ID)',
     )
@@ -75,15 +75,26 @@ class OSPFAreaFilterSet(NetBoxModelFilterSet):
         method='filter_aid',
         label=_('Area ID'),
     )
-
     area_type = django_filters.MultipleChoiceFilter(
         choices=OSPFAreaTypeChoices,
         label=_('Area Type'),
     )
+    device_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='interfaces__interface__device__id',
+        queryset=Device.objects.all(),
+        to_field_name='id',
+        label=_('Device (ID)'),
+    )
+    device = django_filters.ModelMultipleChoiceFilter(
+        field_name='interfaces__interface__device__name',
+        queryset=Device.objects.all(),
+        to_field_name='name',
+        label=_('Device'),
+    )
 
     class Meta:
         model = OSPFArea
-        fields = ('area_id', 'area_type')
+        fields = ('area_id', 'area_type', 'device_id', 'device')
 
     def search(self, queryset, name, value):
         if not value.strip():

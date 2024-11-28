@@ -7,7 +7,7 @@ from netbox.forms import NetBoxModelFilterSetForm
 from netbox_routing.choices import AuthenticationChoices
 from netbox_routing.choices.ospf import OSPFAreaTypeChoices
 from utilities.forms import BOOLEAN_WITH_BLANK_CHOICES, add_blank_choice
-from utilities.forms.fields import TagFilterField, DynamicModelMultipleChoiceField
+from utilities.forms.fields import TagFilterField, DynamicModelMultipleChoiceField, DynamicModelChoiceField
 
 from netbox_routing.models import OSPFInstance, OSPFArea, OSPFInterface
 
@@ -22,13 +22,13 @@ from utilities.forms.rendering import FieldSet
 
 
 class OSPFInstanceFilterForm(NetBoxModelFilterSetForm):
-    device = DynamicModelMultipleChoiceField(
+    device_id = DynamicModelMultipleChoiceField(
         queryset=Device.objects.all(),
         required=False,
         selector=True,
         label=_('Device'),
     )
-    vrf = DynamicModelMultipleChoiceField(
+    vrf_id = DynamicModelMultipleChoiceField(
         queryset=VRF.objects.all(),
         required=False,
         selector=True,
@@ -36,7 +36,7 @@ class OSPFInstanceFilterForm(NetBoxModelFilterSetForm):
     )
     model = OSPFInstance
     fieldsets = (
-        FieldSet('q', 'filter_id', 'tag', 'device'),
+        FieldSet('q', 'filter_id', 'tag', 'device_id', 'vrf_id'),
     )
     tag = TagFilterField(model)
 
@@ -44,12 +44,18 @@ class OSPFInstanceFilterForm(NetBoxModelFilterSetForm):
 class OSPFAreaFilterForm(NetBoxModelFilterSetForm):
     model = OSPFArea
     fieldsets = (
-        FieldSet('q', 'area_type', 'filter_id', 'tag'),
+        FieldSet('q', 'filter_id', 'tag', 'area_type', 'device_id'),
     )
     area_type = forms.ChoiceField(
         choices=add_blank_choice(OSPFAreaTypeChoices),
         label='Area Type',
         required=False
+    )
+    device_id = DynamicModelChoiceField(
+        queryset=Device.objects.all(),
+        required=False,
+        selector=True,
+        label=_('Device'),
     )
     tag = TagFilterField(model)
 
@@ -58,9 +64,9 @@ class OSPFInterfaceFilterForm(NetBoxModelFilterSetForm):
     model = OSPFInterface
     fieldsets = (
         FieldSet('q', 'filter_id', 'tag'),
-        FieldSet('instance', 'area', name=_('OSPF')),
-        FieldSet('interface', name=_('Device')),
-        FieldSet('priority', 'bfd', 'authentication', name=_('Attributes'))
+        FieldSet('instance_id', 'area_id', name=_('OSPF')),
+        FieldSet('device_id', 'interface_id', 'vrf_id', name=_('Device')),
+        FieldSet('passive', 'priority', 'bfd', 'authentication', name=_('Attributes'))
     )
     device_id = DynamicModelMultipleChoiceField(
         queryset=Device.objects.all(),
