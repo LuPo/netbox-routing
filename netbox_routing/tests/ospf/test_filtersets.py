@@ -87,14 +87,31 @@ class OSPFAreaTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
 
+        device = create_test_device(name='Device 1')
+        instance = OSPFInstance.objects.create(name='Instance 0', device=device, router_id='0.0.0.0', process_id=0),
+
+        interfaces = (
+            Interface(device=device, name='Interface 1', type='virtual'),
+            Interface(device=device, name='Interface 2', type='virtual'),
+            Interface(device=device, name='Interface 3', type='virtual'),
+        )
+        Interface.objects.bulk_create(interfaces)
+        
         data = (
-            OSPFArea(area_id='0.0.0.0'),
+            OSPFArea(area_id='0.0.0.0', area_type='backbone'),
             OSPFArea(area_id='1.1.1.1'),
             OSPFArea(area_id=0),
-            OSPFArea(area_id=1),
+            OSPFArea(area_id=1, area_type='standard'),
         )
 
         OSPFArea.objects.bulk_create(data)
+
+        ospf_interfaces = (
+            OSPFInterface(interface=interfaces[0], instance=instance, area=data[0], passive=True),
+            OSPFInterface(interface=interfaces[1], instance=instance, area=data[1], passive=True),
+            OSPFInterface(interface=interfaces[3], instance=instance, area=data[0], passive=False),
+        )
+        OSPFInterface.objects.bulk_create(ospf_interfaces)
 
     def test_q(self):
         params = {'q': '1.1.1.1'}
@@ -102,6 +119,19 @@ class OSPFAreaTestCase(TestCase):
 
     def test_area_id(self):
         params = {'area_id': ['0', '1.1.1.1']}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+    
+    def test_area_type(self):
+        params = {'area_type': ['standard']} # Standard is default area type
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 3)
+
+    def test_devices(self):
+        data = Device.objects.all()[0:2]
+
+        params = {'device_id': data[0].pk}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+
+        params = {'device': data[0].name}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
 
 
